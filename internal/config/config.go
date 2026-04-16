@@ -7,33 +7,37 @@ import (
 	"os"
 	"time"
 
+	"github.com/RomanenkoViktor080/url_shortener_service/internal/util/env"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-type Application struct {
-	config config
+type application struct {
+	Config       config
+	dbConnection *pgxpool.Pool
 }
 type config struct {
-	port     string
-	dbConfig dbConfig
-}
-type dbConfig struct {
-	dns string
+	Port string
+	Dns  string
 }
 
-func Init() Application {
+func Mount() config {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
+	return config{
+		Port: env.GetString("PORT", "8080"),
+		Dns:  env.GetString("GOOSE_DBSTRING", "postgresql://user:password@localhost:5432/postgres"),
+	}
+}
+func Init(cfg config, connection *pgxpool.Pool) application {
 	initLogger()
 
-	cfg := config{
-		port: getEnv("PORT", "8080"),
-	}
-	return Application{
-		config: cfg,
+	return application{
+		Config:       cfg,
+		dbConnection: connection,
 	}
 }
 
@@ -42,25 +46,17 @@ func initLogger() {
 	slog.SetDefault(logger)
 }
 
-func (app *Application) Run() error {
+func (app *application) Run() error {
 	handler := app.mount()
 	srv := &http.Server{
-		Addr:         ":" + app.config.port,
+		Addr:         ":" + app.Config.Port,
 		Handler:      handler,
 		WriteTimeout: 45 * time.Second,
 		ReadTimeout:  45 * time.Second,
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Printf("Listening on port %s", app.config.port)
+	slog.Info("server started", "port", app.Config.Port)
 
 	return srv.ListenAndServe()
-}
-
-func getEnv(key, fallback string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		return fallback
-	}
-	return val
 }
