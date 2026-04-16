@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"sync/atomic"
 
@@ -28,10 +29,31 @@ func NewHashCache(
 	store repository.Store,
 	gen generator.Generator,
 ) HashCache {
-	return &hashCache{
+	hashCache := &hashCache{
 		store: store,
 		gen:   gen,
 	}
+	hashCache.init()
+
+	return hashCache
+}
+
+func (c *hashCache) init() {
+	slog.Info("initializing hash cache")
+	cxt := context.Background()
+	batch, err := c.store.GetHashBatch(cxt, int32(cacheCapacity))
+	if err != nil || batch == nil || len(batch) == 0 {
+		slog.Info("generating hashes")
+		generateBatch, err := c.gen.GenerateBatch(cxt, int64(cacheCapacity))
+		if err != nil {
+			log.Fatalf("failed to initialize hash cache, error: %v", err)
+		}
+		batch = generateBatch
+	}
+	for _, h := range batch {
+		cache <- h
+	}
+	slog.Info("cache is initialized")
 }
 
 func (c *hashCache) GetHash() (string, error) {
@@ -52,6 +74,7 @@ func (c *hashCache) fillCacheBackground() {
 	err = c.store.ExecTx(ctx, func(q repository.Querier) error {
 		hashes, err = q.GetHashBatch(ctx, int32(fetchSize))
 		if err != nil {
+			slog.Error("failed to fetch hashes", "error", err)
 			return err
 		}
 
@@ -61,6 +84,7 @@ func (c *hashCache) fillCacheBackground() {
 				return err
 			}
 		}
+
 		if len(hashes) < 1 {
 			hashes, err = c.gen.GenerateBatch(ctx, 1)
 			if err != nil {
@@ -71,7 +95,7 @@ func (c *hashCache) fillCacheBackground() {
 	})
 
 	if err != nil {
-		slog.Error("Error while filling cache", "error", err)
+		slog.Error("error while filling cache", "error", err)
 		return
 	}
 	for _, h := range hashes {

@@ -2,6 +2,7 @@ package generator
 
 import (
 	"context"
+	"log/slog"
 
 	repository "github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/sqlc"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/pkg/encoder"
@@ -30,6 +31,7 @@ func (g *generator) GenerateBatch(c context.Context, quantity int64) ([]string, 
 
 	numbers, err := g.rep.GetUniqueNumbers(c, quantity)
 	if err != nil {
+		slog.Error("could not get unique numbers by quantity", "quantity", quantity, "error", err)
 		return nil, err
 	}
 
@@ -53,6 +55,7 @@ func (g *generator) GenerateBatchAndSave(c context.Context, quantity int64) ([]s
 	if len(hashes) != 0 {
 		_, err = g.rep.SaveAllHashes(c, hashes)
 		if err != nil {
+			slog.Error("could not save hashes", "error", err)
 			return nil, err
 		}
 	}

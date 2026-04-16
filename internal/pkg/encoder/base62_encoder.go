@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"fmt"
+	"log/slog"
 )
 
 const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -23,6 +24,7 @@ func (e *encoder) Encode(numbers []int64) ([]string, error) {
 
 	for _, number := range numbers {
 		if number < 0 {
+			slog.Error("passed negative number in base62 encoder")
 			return nil, fmt.Errorf("number must be non-negative: %d", number)
 		}
 

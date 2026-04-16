@@ -24,7 +24,7 @@ type config struct {
 func Mount() config {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("error loading .env file")
 	}
 
 	return config{
