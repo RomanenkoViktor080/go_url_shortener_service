@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package repository
+package store
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 type Querier interface {
 	CreateShortUrl(ctx context.Context, arg CreateShortUrlParams) (Url, error)
 	DeleteShortUrlBeforeCreatedAt(ctx context.Context, arg DeleteShortUrlBeforeCreatedAtParams) ([]string, error)
+	FindUrlByHash(ctx context.Context, hash string) (string, error)
 	GetHashBatch(ctx context.Context, limit int32) ([]string, error)
 	GetUniqueNumbers(ctx context.Context, generateSeries int64) ([]int64, error)
 	SaveAllHashes(ctx context.Context, hash []string) (int64, error)

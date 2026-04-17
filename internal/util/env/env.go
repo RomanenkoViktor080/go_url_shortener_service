@@ -6,7 +6,8 @@ import (
 )
 
 func GetString(key, fallback string) string {
-	if val := os.Getenv(key); val != "" {
+	val, ok := os.LookupEnv(key)
+	if ok {
 		return val
 	}
 	return fallback

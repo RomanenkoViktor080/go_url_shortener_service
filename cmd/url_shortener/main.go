@@ -11,20 +11,27 @@ import (
 )
 
 func main() {
-	cxt := context.Background()
+	ctx := context.Background()
+
+	cfx := config.Mount()
 
 	validator.InitValidatorTranslator()
 
-	cfx := config.Mount()
-	pool, err := pgxpool.New(cxt, cfx.Dns)
+	pool, err := pgxpool.New(ctx, cfx.Dns)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer pool.Close()
 
-	app := config.Init(cfx, pool)
-
 	slog.Info("connected to the database")
+
+	redis := config.NewRedisClient()
+	if err = redis.Ping(ctx).Err(); err != nil {
+		log.Fatalf("could not connect to Redis: %v", err)
+	}
+	defer redis.Close()
+
+	app := config.Init(cfx, pool, redis)
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)

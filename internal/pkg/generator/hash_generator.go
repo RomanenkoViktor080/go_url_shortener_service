@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	repository "github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/sqlc"
+	"github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/store"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/pkg/encoder"
 )
 
@@ -13,12 +13,12 @@ type Generator interface {
 	GenerateBatchAndSave(c context.Context, quantity int64) ([]string, error)
 }
 type generator struct {
-	rep     repository.Querier
+	rep     store.Store
 	encoder encoder.Encoder
 }
 
 func NewGenerator(
-	rep repository.Querier,
+	rep store.Store,
 	encoder encoder.Encoder,
 ) Generator {
 	return &generator{
@@ -28,7 +28,6 @@ func NewGenerator(
 }
 
 func (g *generator) GenerateBatch(c context.Context, quantity int64) ([]string, error) {
-
 	numbers, err := g.rep.GetUniqueNumbers(c, quantity)
 	if err != nil {
 		slog.Error("could not get unique numbers by quantity", "quantity", quantity, "error", err)

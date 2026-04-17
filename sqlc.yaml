@@ -5,8 +5,8 @@ sql:
     schema: "internal/adapter/sql/migration"
     gen:
       go:
-        package: "repository"
-        out: "internal/adapter/sql/sqlc"
+        package: "store"
+        out: "internal/adapter/sql/store"
         sql_package: "pgx/v5"
         overrides:
           - db_type: "numeric"

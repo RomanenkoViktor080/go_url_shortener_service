@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	repository "github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/sqlc"
-	"github.com/RomanenkoViktor080/url_shortener_service/internal/cache"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/domain"
+	"github.com/RomanenkoViktor080/url_shortener_service/internal/repository"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/util/env"
 )
 
@@ -16,30 +15,21 @@ var domainName = env.GetString("DOMAIN", "http://localhost:8080")
 
 type UrlService interface {
 	CreateShortUrl(context context.Context, dto domain.CreateShortUrlDto) (string, error)
+	GetOriginalUrl(context context.Context, dto domain.HashDto) (string, error)
 }
-type svc struct {
-	store repository.Store
-	cache cache.HashCache
+type urlService struct {
+	rep repository.UrlRepository
 }
 
 func NewUrlService(
-	store repository.Store,
-	cache cache.HashCache,
+	rep repository.UrlRepository,
 ) UrlService {
-	return &svc{
-		store: store,
-		cache: cache,
+	return &urlService{
+		rep: rep,
 	}
 }
-func (svc *svc) CreateShortUrl(ctx context.Context, dto domain.CreateShortUrlDto) (string, error) {
-	hash, err := svc.cache.GetHash()
-	if err != nil {
-		return "", err
-	}
-	url, err := svc.store.CreateShortUrl(ctx, repository.CreateShortUrlParams{
-		Hash: hash,
-		Url:  dto.Url,
-	})
+func (svc *urlService) CreateShortUrl(ctx context.Context, dto domain.CreateShortUrlDto) (string, error) {
+	url, err := svc.rep.CreateShortUrl(ctx, dto)
 	if err != nil {
 		slog.Warn("error creating short url", "error", err)
 		return "", errors.New("error creating short url")
@@ -47,6 +37,10 @@ func (svc *svc) CreateShortUrl(ctx context.Context, dto domain.CreateShortUrlDto
 
 	return buildShortUrl(url.Hash), nil
 
+}
+
+func (svc *urlService) GetOriginalUrl(ctx context.Context, dto domain.HashDto) (string, error) {
+	return svc.rep.FindUrl(ctx, dto.Hash)
 }
 
 func buildShortUrl(hash string) string {

@@ -10,11 +10,13 @@ import (
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/util/env"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 type application struct {
 	Config       config
 	dbConnection *pgxpool.Pool
+	redisClient  *redis.Client
 }
 type config struct {
 	Port string
@@ -23,6 +25,7 @@ type config struct {
 
 func Mount() config {
 	err := godotenv.Load()
+	mountLogger()
 	if err != nil {
 		log.Fatal("error loading .env file")
 	}
@@ -32,16 +35,15 @@ func Mount() config {
 		Dns:  env.GetString("GOOSE_DBSTRING", "postgresql://user:password@localhost:5432/postgres"),
 	}
 }
-func Init(cfg config, connection *pgxpool.Pool) application {
-	initLogger()
-
+func Init(cfg config, connection *pgxpool.Pool, redisClient *redis.Client) application {
 	return application{
 		Config:       cfg,
 		dbConnection: connection,
+		redisClient:  redisClient,
 	}
 }
 
-func initLogger() {
+func mountLogger() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 }

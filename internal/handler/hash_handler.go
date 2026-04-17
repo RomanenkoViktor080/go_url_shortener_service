@@ -9,28 +9,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type urlHandler struct {
+type hashHandler struct {
 	service service.UrlService
 }
 
-func NewUrlHandler(service service.UrlService) *urlHandler {
-	return &urlHandler{
+func NewHashHandler(service service.UrlService) *hashHandler {
+	return &hashHandler{
 		service: service,
 	}
 }
 
-func (h *urlHandler) CreateShortUrl(c *gin.Context) {
-	var dto domain.CreateShortUrlDto
-	err := c.ShouldBindJSON(&dto)
+func (h *hashHandler) RedirectToOriginalUrl(c *gin.Context) {
+	var dto domain.HashDto
+	err := c.ShouldBindUri(&dto)
 	if err != nil {
 		json.ValidationErrorJsonResponse(c, err)
 		return
 	}
-	url, err := h.service.CreateShortUrl(c, dto)
+	url, err := h.service.GetOriginalUrl(c, dto)
 	if err != nil {
 		json.JsonErrorResponse(c, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
 
-	json.JsonResponse(c, http.StatusCreated, url)
+	c.Redirect(http.StatusFound, url)
 }

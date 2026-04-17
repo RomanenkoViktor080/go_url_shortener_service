@@ -1,5 +1,5 @@
 package domain
 
-type UrlDto struct {
-	Url string `json:"url"`
+type HashDto struct {
+	Hash string `uri:"hash" binding:"required"`
 }
