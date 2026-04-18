@@ -73,7 +73,7 @@ func (r *urlRep) FindUrl(ctx context.Context, hash string) (string, error) {
 	}
 	if url == "" {
 		url, err = r.store.FindUrlByHash(ctx, hash)
-		if err == nil {
+		if err != nil {
 			return "", errors.New("url not found")
 		}
 		err = r.urlCache.Set(ctx, hash, url)
@@ -92,6 +92,10 @@ func (r *urlRep) DeleteShortUrlBeforeCreatedAt(
 ) error {
 	return r.store.ExecTx(ctx, func(q store.Querier) error {
 		hashes, err := r.store.DeleteShortUrlBeforeCreatedAt(ctx, arg)
+		err = r.urlCache.DeleteAll(ctx, hashes)
+		if err != nil {
+			return err
+		}
 		if err != nil {
 			return err
 		}

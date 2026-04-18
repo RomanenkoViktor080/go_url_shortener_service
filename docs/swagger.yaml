@@ -1,0 +1,102 @@
+definitions:
+  domain.CreateShortUrlDto:
+    properties:
+      url:
+        description: Original long URL to be shortened
+        example: https://github.com/google/uuid
+        type: string
+    required:
+    - url
+    type: object
+  domain.ShortUrlDto:
+    properties:
+      url:
+        example: http://localhost:8080/asdg
+        type: string
+    type: object
+  json.Error:
+    properties:
+      message:
+        type: string
+    type: object
+  json.ValidationError:
+    properties:
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /{hash}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the original long URL associated with the provided hash
+        and performs a 302 redirect
+      parameters:
+      - description: Short URL hash identifier
+        in: path
+        name: hash
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirecting to destination
+          headers:
+            Location:
+              description: https://example.com
+              type: string
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/json.Error'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/json.ValidationError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/json.Error'
+      summary: Redirect to original URL
+      tags:
+      - Url
+  /api/v1/url:
+    post:
+      consumes:
+      - application/json
+      description: Accepts a long URL and returns a shortened version
+      parameters:
+      - description: Long URL to be shortened
+        in: body
+        name: Request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateShortUrlDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created
+          schema:
+            $ref: '#/definitions/domain.ShortUrlDto'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/json.Error'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/json.ValidationError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/json.Error'
+      summary: Create a shortened URL
+      tags:
+      - Url
+swagger: "2.0"

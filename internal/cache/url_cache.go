@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -32,7 +33,14 @@ func NewUrlCache(
 }
 
 func (urlCache *urlCache) Get(ctx context.Context, hash string) (string, error) {
-	return urlCache.redis.Get(ctx, urlCache.getKey(hash)).Result()
+	value, err := urlCache.redis.Get(ctx, urlCache.getKey(hash)).Result()
+	if errors.Is(err, redis.Nil) {
+		return value, nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return value, nil
 }
 func (urlCache *urlCache) Set(ctx context.Context, hash, url string) error {
 	err := urlCache.redis.Set(ctx, urlCache.getKey(hash), url, urlCache.ttl).Err()

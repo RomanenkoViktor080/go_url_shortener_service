@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 
+	_ "github.com/RomanenkoViktor080/url_shortener_service/docs"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/store"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/cache"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/config"

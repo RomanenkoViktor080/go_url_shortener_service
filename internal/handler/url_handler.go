@@ -19,6 +19,19 @@ func NewUrlHandler(service service.UrlService) *urlHandler {
 	}
 }
 
+// CreateShortUrl godoc
+//
+//	@Summary		Create a shortened URL
+//	@Description	Accepts a long URL and returns a shortened version
+//	@Tags			Url
+//	@Accept			json
+//	@Produce		json
+//	@Param			Request	body		domain.CreateShortUrlDto	true	"Long URL to be shortened"
+//	@Success		201		{object}	domain.ShortUrlDto			"Successfully created"
+//	@Failure		422		{object}	json.ValidationError		"Validation error"
+//	@Failure		400		{object}	json.Error					"Invalid request body"
+//	@Failure		500		{object}	json.Error					"Internal server error"
+//	@Router			/api/v1/url [post]
 func (h *urlHandler) CreateShortUrl(c *gin.Context) {
 	var dto domain.CreateShortUrlDto
 	err := c.ShouldBindJSON(&dto)
@@ -32,5 +45,7 @@ func (h *urlHandler) CreateShortUrl(c *gin.Context) {
 		return
 	}
 
-	json.JsonResponse(c, http.StatusCreated, url)
+	json.JsonResponse(c, http.StatusCreated, domain.ShortUrlDto{
+		Url: url,
+	})
 }

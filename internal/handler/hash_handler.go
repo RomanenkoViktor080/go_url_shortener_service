@@ -19,8 +19,21 @@ func NewHashHandler(service service.UrlService) *hashHandler {
 	}
 }
 
+// RedirectToOriginalUrl godoc
+//
+//	@Summary		Redirect to original URL
+//	@Description	Retrieves the original long URL associated with the provided hash and performs a 302 redirect
+//	@Tags			Url
+//	@Accept			json
+//	@Param			hash	path		string					true	"Short URL hash identifier"
+//	@Success		302		{object}	nil						"Redirecting to destination"
+//	@Header			302		{string}	Location				"https://example.com"
+//	@Failure		422		{object}	json.ValidationError	"Validation error"
+//	@Failure		400		{object}	json.Error				"Invalid request body"
+//	@Failure		500		{object}	json.Error				"Internal server error"
+//	@Router			/{hash} [get]
 func (h *hashHandler) RedirectToOriginalUrl(c *gin.Context) {
-	var dto domain.HashDto
+	var dto domain.URLRedirectDto
 	err := c.ShouldBindUri(&dto)
 	if err != nil {
 		json.ValidationErrorJsonResponse(c, err)

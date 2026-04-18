@@ -74,15 +74,16 @@ func (q *Queries) DeleteShortUrlBeforeCreatedAt(ctx context.Context, arg DeleteS
 }
 
 const findUrlByHash = `-- name: FindUrlByHash :one
-SELECT hash
+SELECT url
 FROM url
 WHERE hash = $1 LIMIT 1
 `
 
 func (q *Queries) FindUrlByHash(ctx context.Context, hash string) (string, error) {
 	row := q.db.QueryRow(ctx, findUrlByHash, hash)
-	err := row.Scan(&hash)
-	return hash, err
+	var url string
+	err := row.Scan(&url)
+	return url, err
 }
 
 const getHashBatch = `-- name: GetHashBatch :many

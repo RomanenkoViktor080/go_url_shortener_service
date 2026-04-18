@@ -15,7 +15,7 @@ var domainName = env.GetString("DOMAIN", "http://localhost:8080")
 
 type UrlService interface {
 	CreateShortUrl(context context.Context, dto domain.CreateShortUrlDto) (string, error)
-	GetOriginalUrl(context context.Context, dto domain.HashDto) (string, error)
+	GetOriginalUrl(context context.Context, dto domain.URLRedirectDto) (string, error)
 }
 type urlService struct {
 	rep repository.UrlRepository
@@ -39,7 +39,7 @@ func (svc *urlService) CreateShortUrl(ctx context.Context, dto domain.CreateShor
 
 }
 
-func (svc *urlService) GetOriginalUrl(ctx context.Context, dto domain.HashDto) (string, error) {
+func (svc *urlService) GetOriginalUrl(ctx context.Context, dto domain.URLRedirectDto) (string, error) {
 	return svc.rep.FindUrl(ctx, dto.Hash)
 }
 

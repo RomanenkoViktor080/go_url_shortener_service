@@ -24,7 +24,7 @@ WHERE hash IN (SELECT hash FROM hash LIMIT $1)
     RETURNING hash;
 
 -- name: FindUrlByHash :one
-SELECT hash
+SELECT url
 FROM url
 WHERE hash = $1 LIMIT 1;
 
