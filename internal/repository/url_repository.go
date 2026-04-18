@@ -15,6 +15,8 @@ type UrlRepository interface {
 	GetUniqueNumbers(ctx context.Context, generateSeries int64) ([]int64, error)
 	SaveAllHashes(ctx context.Context, hash []string) (int64, error)
 	FindUrl(ctx context.Context, hash string) (string, error)
+	DeleteShortUrlBeforeCreatedAt(ctx context.Context, arg store.DeleteShortUrlBeforeCreatedAtParams) error
+	CountCaches(ctx context.Context) (int64, error)
 }
 type urlRep struct {
 	store     store.Store
@@ -82,4 +84,21 @@ func (r *urlRep) FindUrl(ctx context.Context, hash string) (string, error) {
 		}
 	}
 	return url, nil
+}
+
+func (r *urlRep) DeleteShortUrlBeforeCreatedAt(
+	ctx context.Context,
+	arg store.DeleteShortUrlBeforeCreatedAtParams,
+) error {
+	return r.store.ExecTx(ctx, func(q store.Querier) error {
+		hashes, err := r.store.DeleteShortUrlBeforeCreatedAt(ctx, arg)
+		if err != nil {
+			return err
+		}
+		_, err = r.store.SaveAllHashes(ctx, hashes)
+		return err
+	})
+}
+func (r *urlRep) CountCaches(ctx context.Context) (int64, error) {
+	return r.store.CountCaches(ctx)
 }

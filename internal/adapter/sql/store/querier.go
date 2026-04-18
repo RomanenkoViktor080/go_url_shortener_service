@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CountCaches(ctx context.Context) (int64, error)
 	CreateShortUrl(ctx context.Context, arg CreateShortUrlParams) (Url, error)
 	DeleteShortUrlBeforeCreatedAt(ctx context.Context, arg DeleteShortUrlBeforeCreatedAtParams) ([]string, error)
 	FindUrlByHash(ctx context.Context, hash string) (string, error)

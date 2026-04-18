@@ -11,9 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countCaches = `-- name: CountCaches :one
+SELECT COUNT(*)
+FROM hash
+`
+
+func (q *Queries) CountCaches(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countCaches)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createShortUrl = `-- name: CreateShortUrl :one
-INSERT INTO url (hash, url) VALUES ($1, $2)
-    RETURNING hash, url, created_at
+INSERT INTO url (hash, url)
+VALUES ($1, $2) RETURNING hash, url, created_at
 `
 
 type CreateShortUrlParams struct {
@@ -29,7 +41,8 @@ func (q *Queries) CreateShortUrl(ctx context.Context, arg CreateShortUrlParams) 
 }
 
 const deleteShortUrlBeforeCreatedAt = `-- name: DeleteShortUrlBeforeCreatedAt :many
-DELETE FROM url
+DELETE
+FROM url
 WHERE url.created_at < $1
   AND hash IN (SELECT hash FROM url LIMIT $2)
     RETURNING hash
@@ -61,7 +74,8 @@ func (q *Queries) DeleteShortUrlBeforeCreatedAt(ctx context.Context, arg DeleteS
 }
 
 const findUrlByHash = `-- name: FindUrlByHash :one
-SELECT hash FROM url
+SELECT hash
+FROM url
 WHERE hash = $1 LIMIT 1
 `
 
@@ -72,7 +86,8 @@ func (q *Queries) FindUrlByHash(ctx context.Context, hash string) (string, error
 }
 
 const getHashBatch = `-- name: GetHashBatch :many
-DELETE FROM hash
+DELETE
+FROM hash
 WHERE hash IN (SELECT hash FROM hash LIMIT $1)
     RETURNING hash
 `
@@ -98,7 +113,8 @@ func (q *Queries) GetHashBatch(ctx context.Context, limit int32) ([]string, erro
 }
 
 const getUniqueNumbers = `-- name: GetUniqueNumbers :many
-SELECT nextval('unique_number_seq') FROM generate_series(1, $1)
+SELECT nextval('unique_number_seq')
+FROM generate_series(1, $1)
 `
 
 func (q *Queries) GetUniqueNumbers(ctx context.Context, generateSeries int64) ([]int64, error) {
