@@ -1,0 +1,15 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "internal/adapter/sql/query"
+    schema: "internal/adapter/sql/migration"
+    gen:
+      go:
+        package: "store"
+        out: "internal/adapter/sql/store"
+        sql_package: "pgx/v5"
+        overrides:
+          - db_type: "numeric"
+            go_type: "int64"
+        emit_json_tags: true
+        emit_interface: true
