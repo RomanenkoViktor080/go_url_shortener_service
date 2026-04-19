@@ -36,16 +36,16 @@ func (h *urlHandler) CreateShortUrl(c *gin.Context) {
 	var dto domain.CreateShortUrlDto
 	err := c.ShouldBindJSON(&dto)
 	if err != nil {
-		json.ValidationErrorJsonResponse(c, err)
+		json.InvalidRequestDataResponse(c, err)
 		return
 	}
 	url, err := h.service.CreateShortUrl(c, dto)
 	if err != nil {
-		json.JsonErrorResponse(c, http.StatusInternalServerError, err.Error(), err)
+		json.ErrorResponse(c, err)
 		return
 	}
 
-	json.JsonResponse(c, http.StatusCreated, domain.ShortUrlDto{
+	json.Response(c, http.StatusCreated, domain.ShortUrlDto{
 		Url: url,
 	})
 }

@@ -2,12 +2,15 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/store"
+	"github.com/RomanenkoViktor080/url_shortener_service/internal/apperr"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/cache"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/domain"
+	"github.com/redis/go-redis/v9"
 )
 
 type UrlRepository interface {
@@ -37,7 +40,7 @@ func NewUrlRepository(
 }
 
 func (r *urlRep) CreateShortUrl(ctx context.Context, dto domain.CreateShortUrlDto) (store.Url, error) {
-	hash, err := r.hashCache.GetHash()
+	hash, err := r.hashCache.GetHash(ctx)
 	if err != nil {
 		return store.Url{}, err
 	}
@@ -68,13 +71,16 @@ func (r *urlRep) SaveAllHashes(ctx context.Context, hashes []string) (int64, err
 
 func (r *urlRep) FindUrl(ctx context.Context, hash string) (string, error) {
 	url, err := r.urlCache.Get(ctx, hash)
-	if err != nil {
-		return "", err
+	if err == nil {
+		return url, nil
 	}
-	if url == "" {
+	if errors.Is(err, redis.Nil) {
 		url, err = r.store.FindUrlByHash(ctx, hash)
 		if err != nil {
-			return "", errors.New("url not found")
+			if errors.Is(err, sql.ErrNoRows) {
+				return "", &apperr.NotFoundError{Message: "url not found"}
+			}
+			return "", err
 		}
 		err = r.urlCache.Set(ctx, hash, url)
 		if err != nil {
@@ -83,7 +89,7 @@ func (r *urlRep) FindUrl(ctx context.Context, hash string) (string, error) {
 			)
 		}
 	}
-	return url, nil
+	return url, err
 }
 
 func (r *urlRep) DeleteShortUrlBeforeCreatedAt(

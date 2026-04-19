@@ -4,10 +4,17 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 
+	"github.com/RomanenkoViktor080/url_shortener_service/internal/apperr"
 	val "github.com/RomanenkoViktor080/url_shortener_service/internal/pkg/validator"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+)
+
+var (
+	internalError       = Error{Message: "internal error"}
+	invalidRequestError = Error{Message: "invalid request body"}
 )
 
 type Error struct {
@@ -18,19 +25,21 @@ type ValidationError struct {
 	Fields  map[string]string `json:"fields"`
 }
 
-func JsonErrorResponse(c *gin.Context, code int, msg string, err error) {
-	if code >= 500 {
-		slog.Error(msg, err)
+func ErrorResponse(c *gin.Context, err error) {
+	if e, ok := errors.AsType[*apperr.NotFoundError](err); ok {
+		Response(c, http.StatusNotFound, e)
+		return
 	}
-	JsonResponse(c, code, err)
+	slog.Error("internal error", "error", err, "trace", debug.Stack())
+	Response(c, http.StatusInternalServerError, internalError)
 }
-func JsonResponse(c *gin.Context, code int, any any) {
+func Response(c *gin.Context, code int, any any) {
 	c.JSON(code, any)
 }
-func ValidationErrorJsonResponse(c *gin.Context, err error) {
-	var ve validator.ValidationErrors
-	if !errors.As(err, &ve) {
-		JsonResponse(c, http.StatusBadRequest, "invalid request body")
+func InvalidRequestDataResponse(c *gin.Context, err error) {
+	ve, ok := errors.AsType[validator.ValidationErrors](err)
+	if !ok {
+		Response(c, http.StatusBadRequest, invalidRequestError)
 		return
 	}
 

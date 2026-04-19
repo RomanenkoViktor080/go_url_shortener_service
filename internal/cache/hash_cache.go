@@ -2,9 +2,11 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"log"
 	"log/slog"
 	"sync/atomic"
+	"time"
 
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/adapter/sql/store"
 	"github.com/RomanenkoViktor080/url_shortener_service/internal/pkg/generator"
@@ -18,7 +20,7 @@ var (
 )
 
 type HashCache interface {
-	GetHash() (string, error)
+	GetHash(ctx context.Context) (string, error)
 }
 
 type hashCache struct {
@@ -59,11 +61,19 @@ func (c *hashCache) init() {
 	slog.Info("hash cache is initialized")
 }
 
-func (c *hashCache) GetHash() (string, error) {
+func (c *hashCache) GetHash(ctx context.Context) (string, error) {
 	if c.isBelowLimit() && isFilling.CompareAndSwap(false, true) {
 		go c.fillCacheBackground()
 	}
-	return <-c.cache, nil
+
+	select {
+	case hash, _ := <-c.cache:
+		return hash, nil
+	case <-ctx.Done():
+		return "", errors.New("hash cache timeout: background filler might be stuck")
+	case <-time.After(10 * time.Second):
+		return "", errors.New("hash cache timeout: background filler might be stuck")
+	}
 }
 
 func (c *hashCache) fillCacheBackground() {

@@ -34,14 +34,13 @@ func NewHashHandler(service service.UrlService) *hashHandler {
 //	@Router			/{hash} [get]
 func (h *hashHandler) RedirectToOriginalUrl(c *gin.Context) {
 	var dto domain.URLRedirectDto
-	err := c.ShouldBindUri(&dto)
-	if err != nil {
-		json.ValidationErrorJsonResponse(c, err)
+	if err := c.ShouldBindUri(&dto); err != nil {
+		json.InvalidRequestDataResponse(c, err)
 		return
 	}
 	url, err := h.service.GetOriginalUrl(c, dto)
 	if err != nil {
-		json.JsonErrorResponse(c, http.StatusInternalServerError, err.Error(), err)
+		json.ErrorResponse(c, err)
 		return
 	}
 
